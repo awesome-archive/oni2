@@ -1,0 +1,7 @@
+steps:
+  - script: scripts/osx/package.sh
+  - task: PublishBuildArtifacts@1
+    displayName: "Release Artifact: Darwin"
+    inputs:
+      PathToPublish: "_publish"
+      ArtifactName: "Release_Darwin"

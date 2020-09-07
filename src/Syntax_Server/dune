@@ -1,0 +1,20 @@
+(library
+    (name Oni_Syntax_Server)
+    (public_name Oni2.syntax_server)
+    (libraries 
+        str
+        bigarray
+        Revery.zed
+        luv
+        lwt
+        lwt.unix
+        yojson
+        Oni2.core
+        Oni2.syntax
+        Oni2.model
+        Rench
+        Revery
+        textmate
+        treesitter
+        Oni2.exthost
+    ))

@@ -1,5 +1,5 @@
-open Oni_Core;
 open Oni_Model;
+open Oni_Store;
 open BenchFramework;
 
 open Helpers;
@@ -16,9 +16,7 @@ let doubleEditorSize = () => {
   let _ =
     Reducer.reduce(
       state,
-      Actions.SetEditorSize(
-        Types.EditorSize.create(~pixelWidth=3200, ~pixelHeight=2400, ()),
-      ),
+      Actions.EditorGroupSizeChanged({id: 0, width: 3200, height: 2400}),
     );
   ();
 };
@@ -26,20 +24,10 @@ let doubleEditorSize = () => {
 let changeEditorFont = () => {
   let state = hundredThousandLineState;
 
-  let _ =
-    Reducer.reduce(
-      state,
-      Actions.SetEditorFont(
-        Types.EditorFont.create(
-          ~fontFile="dummy",
-          ~fontSize=10,
-          ~measuredWidth=10.,
-          ~measuredHeight=10.,
-          (),
-        ),
-      ),
-    );
-  ();
+  Reducer.reduce(
+    state,
+    Actions.EditorFont(Service_Font.FontLoaded(Service_Font.default)),
+  );
 };
 
 bench(~name="Reducer: SetEditorSize", ~setup, ~f=doubleEditorSize, ());

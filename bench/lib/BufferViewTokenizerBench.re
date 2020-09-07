@@ -1,21 +1,32 @@
+open EditorCoreTypes;
 open Oni_Core;
-open Oni_Extensions;
-open Oni_Model;
 open BenchFramework;
+open Feature_Editor;
 
-let giantString = String.make(1000, 'a');
-
-let theme = Theme.create();
-let noTokens: list(ColorizedToken.t) = [];
-let colorMap = ColorMap.create();
+let giantString =
+  String.make(1000, 'a')
+  |> BufferLine.make(~indentation=IndentationSettings.default);
 
 let options = Reperf.Options.create(~iterations=1000, ());
 
 let setup = () => ();
 
+let indentationSettings = IndentationSettings.default;
+let simpleColorizer = _ =>
+  BufferLineColorizer.{
+    color: Revery.Colors.black,
+    backgroundColor: Revery.Colors.white,
+    bold: false,
+    italic: false,
+  };
+
 let tokenizeLine = () => {
   let _ =
-    BufferViewTokenizer.tokenize(giantString, theme, noTokens, colorMap);
+    BufferViewTokenizer.tokenize(
+      ~stop=CharacterIndex.ofInt(1000),
+      giantString,
+      simpleColorizer,
+    );
   ();
 };
 

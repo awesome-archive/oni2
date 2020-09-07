@@ -1,100 +1,132 @@
-open Oni_UI;
+open Oni_Core;
+open Oni_Model;
 open BenchFramework;
+open Feature_Editor;
 
 open Helpers;
 
-open Revery.UI;
-
-let rootNode = (new node)();
-
-let setup = () => ();
-
-let editorSurfaceMinimalState = () => {
-  let _ =
-    React.RenderedElement.render(
-      rootNode,
-      <EditorSurface editor=simpleEditor state=simpleState metrics />,
+let setup = () => {
+  let hwnd =
+    Revery.Utility.HeadlessWindow.create(
+      Revery.WindowCreateOptions.create(~width=3440, ~height=1440, ()),
     );
-  ();
+  hwnd;
 };
 
-let editorSurfaceThousandLineState = () => {
-  let _ =
-    React.RenderedElement.render(
-      rootNode,
-      <EditorSurface editor=simpleEditor state=thousandLineState metrics />,
-    );
-  ();
+let configResolver = (settings, _vimModel, ~vimSetting as _, key) =>
+  Config.Settings.get(key, settings)
+  |> Option.map(configJson => Config.Json(configJson))
+  |> Option.value(~default=Config.NotSet);
+
+let editor = (editor, buffer, state: State.t) => {
+  <EditorSurface
+    isActiveSplit=true
+    languageConfiguration=LanguageConfiguration.default
+    dispatch={_ => ()}
+    editor
+    buffer
+    onEditorSizeChanged={(_, _, _) => ()}
+    onCursorChange={_ => ()}
+    bufferHighlights={state.bufferHighlights}
+    bufferSyntaxHighlights={state.syntaxHighlights}
+    diagnostics={state.diagnostics}
+    tokenTheme={state.tokenTheme}
+    languageSupport={state.languageSupport}
+    mode={Feature_Vim.mode(state.vim)}
+    theme={Feature_Theme.colors(state.colorTheme)}
+    windowIsFocused=true
+    scm=Feature_SCM.initial
+    config={configResolver(Config.Settings.empty, Feature_Vim.initial)}
+    languageInfo=Exthost.LanguageInfo.initial
+    grammarRepository=Oni_Syntax.GrammarRepository.empty
+    uiFont=Oni_Core.UiFont.default
+    renderOverlays={(~gutterWidth as _) => <Revery.UI.View />}
+  />;
 };
 
-let editorSurfaceHundredThousandLineState = () => {
-  let _ =
-    React.RenderedElement.render(
-      rootNode,
-      <EditorSurface
-        editor=simpleEditor
-        state=hundredThousandLineState
-        metrics
-      />,
-    );
-  ();
-};
-
-let setupSurfaceThousandLineLayout = () => {
-  let rootNode = (new viewNode)();
-
-  rootNode#setStyle(
-    Style.make(~position=LayoutTypes.Relative, ~width=1600, ~height=1200, ()),
+let editorSurfaceMinimalState = hwnd => {
+  Revery.Utility.HeadlessWindow.render(
+    hwnd,
+    editor(simpleEditor, thousandLineBuffer, thousandLineState),
   );
-
-  let container = Container.create(rootNode);
-  Container.update(
-    container,
-    <EditorSurface editor=simpleEditor state=thousandLineState metrics />,
-  )
-  |> ignore;
-
-  rootNode;
 };
 
-let editorSurfaceThousandLineLayout = rootNode => {
-  Layout.layout(~force=true, rootNode);
+let editorSurfaceThousandLineState = hwnd => {
+  Revery.Utility.HeadlessWindow.render(
+    hwnd,
+    editor(simpleEditor, thousandLineBuffer, thousandLineState),
+  );
 };
 
-let options = Reperf.Options.create(~iterations=100, ());
+let editorSurfaceThousandLineStateWithIndents = hwnd => {
+  Revery.Utility.HeadlessWindow.render(
+    hwnd,
+    editor(simpleEditor, thousandLineBuffer, thousandLineState),
+  );
+  ();
+};
+let editorSurfaceHundredThousandLineStateNoMinimap = hwnd => {
+  Revery.Utility.HeadlessWindow.render(
+    hwnd,
+    editor(simpleEditor, thousandLineBuffer, thousandLineState),
+  );
+};
 
-bench(
+let editorSurfaceHundredThousandLineState = hwnd => {
+  Revery.Utility.HeadlessWindow.render(
+    hwnd,
+    editor(simpleEditor, thousandLineBuffer, thousandLineState),
+  );
+};
+
+let runUIBench = (~name, ~screenshotFile, f) => {
+  let setupWithScreenshot = () => {
+    let hwnd = setup();
+
+    switch (Sys.getenv_opt("ONI2_BENCH_SCREENSHOT")) {
+    | None => ()
+    | Some(_) =>
+      print_endline(
+        "Outputting screenshot for: " ++ name ++ " as " ++ screenshotFile,
+      );
+      f(hwnd);
+      Revery.Utility.HeadlessWindow.takeScreenshot(hwnd, screenshotFile);
+    };
+
+    hwnd;
+  };
+
+  let options = Reperf.Options.create(~iterations=10, ());
+
+  bench(~name, ~options, ~setup=setupWithScreenshot, ~f, ());
+};
+
+runUIBench(
   ~name="EditorSurface - Rendering: Minimal state",
-  ~options,
-  ~setup,
-  ~f=editorSurfaceMinimalState,
-  (),
+  ~screenshotFile="minimal.png",
+  editorSurfaceMinimalState,
 );
-bench(
+
+runUIBench(
   ~name="EditorSurface - Rendering: 1000 Lines state",
-  ~options,
-  ~setup,
-  ~f=editorSurfaceThousandLineState,
-  (),
+  ~screenshotFile="thousand.png",
+  editorSurfaceThousandLineState,
 );
 
-bench(
+runUIBench(
+  ~name="EditorSurface - Rendering: 1000 Lines state - With indent guides",
+  ~screenshotFile="thousand_plus_indents.png",
+  editorSurfaceThousandLineStateWithIndents,
+);
+
+runUIBench(
   ~name="EditorSurface - Rendering: 100000 Lines state",
-  ~options,
-  ~setup,
-  ~f=editorSurfaceHundredThousandLineState,
-  (),
+  ~screenshotFile="hundred_thousand.png",
+  editorSurfaceHundredThousandLineState,
 );
 
-/*
- * Bug: This benchmark fails on Linux CI currently
- */
-if (Revery.Environment.os == Windows || Revery.Environment.os === Mac) {
-  bench(
-    ~name="EditorSurface - Layout: 1000 Lines state",
-    ~options,
-    ~setup=setupSurfaceThousandLineLayout,
-    ~f=editorSurfaceThousandLineLayout,
-    (),
-  );
-};
+runUIBench(
+  ~name="EditorSurface - Rendering: 100000 Lines state - No minimap",
+  ~screenshotFile="hundred_thousand_no_minimap.png",
+  editorSurfaceHundredThousandLineStateNoMinimap,
+);

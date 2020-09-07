@@ -1,34 +1,65 @@
 # Cross-platform set of build steps for building esy projects
 
 steps:
-  - script: npm install -g esy@0.5.6
-    displayName: 'Install Esy: npm install -g esy@0.5.6'
+  - script: npm install -g esy@0.6.6
+    displayName: 'Install Esy: npm install -g esy@0.6.6'
   - script: esy install
     displayName: 'Install Dependencies: esy install'
   - script: esy bootstrap
     displayName: 'Bootstrap Oni2 setup with system specific build variables'
   - script: esy build
     displayName: 'Build: esy build'
+  - script: esy build dune build @check
+    displayName: 'Build: esy build dune build @check'
+  - script: esy x Oni2 --help
+    displayName: "esy x Oni2 --help"
+  - script: esy x Oni2 -f --version
+    displayName: "esy x Oni2_editor -f --version"
+  - script: esy x Oni2 -f --checkhealth 
+    displayName: "esy x Oni2 -f --checkhealth"
+  - script: esy create-release
+    displayName: "esy create-release"
+  - script: esy build-env
+    displayName: "Esy: show build env"
   - script: esy @test install
     displayName: 'Test: install'
+  - script: esy @test inline
+    displayName: 'Inline Unit Tests: esy @test inline'
+# Try out suggestion here: https://github.com/google/sanitizers/issues/1171
   - script: esy @test run-ci
     displayName: 'Unit Tests: esy test-ci (round 1)'
+    env:
+      ASAN_OPTIONS: use_sigaltstack=0
+      LSAN_OPTIONS: suppressions=integration_test/lsan.supp
+#  - script: esy @test run-ci
+#    displayName: 'Unit Tests: esy test-ci (round 2)'
+#  - script: esy @test run-ci
+#    displayName: 'Unit Tests: esy test-ci (round 3)'
+  - script: esy @integrationtest install
+    displayName: 'Integration Tests: install'
+  - script: esy @integrationtest run
+    displayName: 'Integration Tests: run'
+    env:
+      ASAN_OPTIONS: use_sigaltstack=0
+      LSAN_OPTIONS: suppressions=lsan.supp
   # TODO: Stabilize and bring back!
   # - script: esy x OniUnitTestRunner
-  #   displayName: 'Unit Tests: esy x OniUnitTestRunner (round 2)'
+  #  displayName: 'Unit Tests: esy x OniUnitTestRunner (round 2)'
   # - script: esy x OniUnitTestRunner
   #   displayName: 'Unit Tests: esy x OniUnitTestRunner (round 3)'
-  - task: PublishTestResults@2
-    displayName: 'Publish JUnit file'
-    inputs:
-      testResultsFormat: JUnit
-      testResultsFiles: '**/*junit.xml'
-      buildPlatform: ${{ parameters.platform }}
-      testRunTitle: ${{ parameters.platform }}
-      failTaskOnFailedTests: true
-  - script: esy @bench install
-    displayName: "Bench: install"
-  - script: esy @bench build
-    displayName: "Bench: build"
-  - script: esy @bench run
-    displayName: "Bench: run"
+  # - task: PublishTestResults@2
+  # TODO: Why is this hanging on Linux?
+  #  displayName: 'Publish JUnit file'
+  #  inputs:
+  #    testResultsFormat: JUnit
+  #    testResultsFiles: '**/*junit.xml'
+  #    buildPlatform: ${{ parameters.platform }}
+  #    testRunTitle: ${{ parameters.platform }}
+  #    failTaskOnFailedTests: true
+  # TODO: Why is esy '@bench' install taking so long, and why is esy '@bench' build hanging on Linux / MacOS?
+  # - script: esy @bench install
+  #  displayName: "Bench: install"
+  # - script: esy @bench build -v -v
+  #  displayName: "Bench: build"
+  # - script: esy @bench run
+  #  displayName: "Bench: run"

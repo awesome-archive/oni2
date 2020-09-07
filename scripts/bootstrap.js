@@ -1,3 +1,4 @@
+const cp = require("child_process")
 const fs = require("fs")
 const path = require("path")
 
@@ -5,6 +6,7 @@ const rootDir = path.join(__dirname, "..")
 const configPath = path.join(rootDir, "assets", "configuration")
 const vendorPath = path.join(rootDir, "vendor")
 
+console.log("Bootstrap configuration: " + JSON.stringify(process.argv))
 const outputFile = path.join(configPath, "setup.json")
 
 const isMac = process.platform === "darwin"
@@ -12,29 +14,31 @@ const isWindows = process.platform === "win32"
 const isLinux = !isMac && !isWindows
 
 let nodePath
-let textMateServicePath = path.join(rootDir, "src", "textmate_service", "lib", "src", "index.js")
-let extensionHostPath = path.join(rootDir, "src", "textmate_service", "node_modules", "vscode-exthost", "out", "bootstrap-fork.js");
+let nodeScriptPath = path.join(rootDir, "node")
 let extensionsPath = path.join(rootDir, "extensions")
-let developmentExtensionsPath = path.join(rootDir, "src", "development_extensions");
+let developmentExtensionsPath = path.join(rootDir, "development_extensions")
 let rgPath = path.join(vendorPath, "ripgrep-v0.10.0")
+let rlsPath = path.join(vendorPath, "reason-language-server")
 
-const getCygwinPath = inputPath => {
+const getCygwinPath = (inputPath) => {
     return inputPath.replace(/\\/g, "/")
 }
 
 if (isWindows) {
-    nodePath = getCygwinPath(path.join(vendorPath, "node-v10.15.1", "win-x64", "node.exe"))
-    textMateServicePath = getCygwinPath(textMateServicePath)
-    extensionHostPath = getCygwinPath(extensionHostPath);
+    nodePath = getCygwinPath(path.join(vendorPath, "node-v12.17.0", "win-x64", "node.exe"))
+    nodeScriptPath = getCygwinPath(nodeScriptPath)
     extensionsPath = getCygwinPath(extensionsPath)
-    developmentExtensionsPath = getCygwinPath(developmentExtensionsPath);
+    developmentExtensionsPath = getCygwinPath(developmentExtensionsPath)
     rgPath = getCygwinPath(path.join(rgPath, "windows", "rg.exe"))
+    rlsPath = getCygwinPath(path.join(rlsPath, "bin.native.exe"))
 } else if (isMac) {
-    nodePath = path.join(vendorPath, "node-v10.15.1", "osx", "node")
+    nodePath = path.join(vendorPath, "node-v12.17.0", "osx", "node")
     rgPath = path.join(rgPath, "mac", "rg")
+    rlsPath = path.join(rlsPath, "bin.native")
 } else if (isLinux) {
-    nodePath = path.join(vendorPath, "node-v10.15.1", "linux-x64", "node")
+    nodePath = path.join(vendorPath, "node-v12.17.0", "linux-x64", "node")
     rgPath = path.join(rgPath, "linux", "rg")
+    rlsPath = path.join(rlsPath, "bin.native.linux")
 } else {
     console.error("Unknown OS...aborting.")
     return 1
@@ -42,11 +46,11 @@ if (isWindows) {
 
 const config = {
     node: nodePath,
-    textmateService: textMateServicePath,
+    nodeScript: nodeScriptPath,
     bundledExtensions: extensionsPath,
     developmentExtensions: developmentExtensionsPath,
-    extensionHost: extensionHostPath,
     rg: rgPath,
+    rls: rlsPath,
 }
 const oniConfig = JSON.stringify(config)
 

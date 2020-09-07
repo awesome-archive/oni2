@@ -1,0 +1,19 @@
+(library
+    (name Oni_Syntax)
+    (public_name Oni2.syntax)
+    (libraries 
+        str
+        bigarray
+        Revery.zed
+        lwt
+        lwt.unix
+        yojson
+        ppx_deriving.runtime
+        Oni2.core
+        Oni2.exthost
+        Rench
+        Revery
+        textmate
+        treesitter
+    )
+    (preprocess (pps ppx_deriving.show)))

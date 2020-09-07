@@ -4,3 +4,27 @@
 # to CRLF. This causes problems for shell scripts, as bash
 # gets choked up on the extra `\r` character.
 *.sh text eol=lf
+
+# Windows executables
+*.exe      binary
+
+# Archives
+*.7z       binary
+*.gz       binary
+*.tar      binary
+*.tgz      binary
+*.zip      binary
+
+# Linguist override
+*.re linguist-language=Reason
+*.rei linguist-language=Reason
+
+# Hide lockfile updates
+*esy.lock/* linguist-generated
+
+# Hide vendored extension code
+extensions/* linguist-generated
+
+# Test files
+integration_test/test.crlf text eol=crlf
+integration_test/test.lf text eol=lf

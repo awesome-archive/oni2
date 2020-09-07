@@ -64,7 +64,12 @@ typings/
 .merlin
 _build/
 _esy/
+_publish/
 _release/
+_staging/
+camlppx.lastfail
+
+scripts/release.json
 
 .DS_Store
 setup.txt
